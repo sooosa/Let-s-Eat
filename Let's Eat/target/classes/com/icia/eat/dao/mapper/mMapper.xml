@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Member">
+
+	<!-- 시작페이지 업체목록 메소드 -->
+	<select id="slist" resultType="store">
+		SELECT * FROM STORE 
+	</select>
+	
+
+	<!-- 회원가입 -->
+	<insert id="mInsert" parameterType="member" >
+		INSERT INTO MEMBER VALUES ('M_'||MEMBER_SEQ.NEXTVAL,#{mId},#{mPw},#{mName},#{mBirth},#{mGender},#{mPhone},#{mAddr},#{mEmail},1,1000,SYSDATE)
+	</insert>
+
+	<!-- midOverlap -->
+	<select id="midOverlap" resultType="String" parameterType="String">
+		SELECT MID FROM MEMBER WHERE MID=#{mId} 
+	</select>
+	
+	<!-- 일반 회원 로그인 (DTO타입으로 member객체 모두 가져오기 위함)-->
+	<select id="mlogin" resultType="member" parameterType="member">
+		SELECT * FROM MEMBER WHERE MID=#{mId}
+	</select>
+	
+	<!-- 암호화된 로그인 하기 (암호화된 비밀번호를 가져오기 위함) -->
+	<select id="EncPw" resultType="String" parameterType="String">
+		SELECT MPW FROM MEMBER WHERE MID=#{mId}
+	</select>
+
+	<!--일반 정보보기 -->
+	<select id="mview" resultType="member" parameterType="String">
+		SELECT MCODE, MID,MPW,MNAME,TO_CHAR(MBIRTH,'YYYY"년 "MM"월 "DD"일"') AS MBIRTH,MGENDER,MPHONE,
+			MADDR,MEMAIL,MKEY,MPOINT,MJOINDATE FROM MEMBER WHERE MID=#{mId} 
+	</select>
+
+	<!--일반 정보수정 -->
+	<update id="mModify" parameterType="member">
+		UPDATE MEMBER SET MNAME=#{mName}, MPHONE=#{mPhone}, MADDR=#{mAddr}, MEMAIL=#{mEmail} WHERE MID=#{mId} 
+	</update>
+
+	<!-- 일반 삭제 -->
+	<update id="mDel" parameterType="String">
+		UPDATE MEMBER SET MKEY=2 WHERE MID=#{mId} 
+	</update>
+
+	<!-- 아이디 찾기 -->
+	<select id="midcheck" resultType="String">
+		SELECT MID FROM MEMBER WHERE MNAME=#{mName} AND MPHONE=#{mPhone} 
+	</select>
+	
+	<!-- 이메일 인증 후 mkeyalter -->
+	<update id="mKAlter" parameterType="member">
+		UPDATE MEMBER SET MKEY ='Y' WHERE MID=#{mId} 
+	</update>
+
+	<!-- 비밀번호 변경하기 -->
+	<update id="mPwChange" parameterType="member">
+		UPDATE MEMBER SET MPW=#{mPw} WHERE MID=#{mId} 
+	</update>
+
+	<!-- 네이버 아이디로 회원가입 -->
+	<insert id="nJoin" parameterType="member">
+		INSERT INTO MEMBER VALUES ('M_'||MEMBER_SEQ.NEXTVAL, #{mId}, '', #{mName}, #{mBirth},#{mGender},#{mPhone},'', #{mEmail},1, 1000, SYSDATE)
+	</insert>
+
+	<!-- 네이버 아이디로 로그인 -->
+	<select id="nLogin" resultType="String" parameterType="String">
+		SELECT MNAME FROM MEMBER WHERE MID=#{mId} 
+	</select>
+
+
+	<!-- 검색 기능 -->
+	<select id="sh" resultType="store" parameterType="String">
+		SELECT * FROM STORE WHERE (SADDR LIKE '%'||#{city}||'%' AND 
+		SADDR LIKE '%'||#{local}||'%' AND 
+		SFOOD LIKE '%'||'#'||#{food}||'%' AND
+		(SKEYWORD LIKE '%'||'#'||#{keyword}||'%' OR 
+		 SNAME LIKE '%'||#{keyword}||'%' ) )
+	</select>
+	
+
+	<!-- 현재 예약중 리스트 -->
+	<select id="bookinglist" resultType="reservation">
+		SELECT B.BCODE,B.BSCODE,TO_CHAR(B.BDATE,'YYYY"년 "MM"월 "DD"일"') AS BDATE,B.BTIME,B.BMCOUNT,B.BMCODE,B.BMPHONE,S.SFILENAME1 AS BSFILENAME1, S.SADDR AS BSADDR, S.SNAME AS BSNAME 
+		FROM BOOK B, STORE S WHERE BSCODE=STORECODE AND BMCODE=#{bmCode} AND BDATE >= TO_CHAR(SYSDATE,'YYYY-MM-DD') ORDER BY BDATE DESC
+		
+	</select>
+	
+	<!-- 예약 이력 리스트 -->
+	<select id="bookedlist" resultType="reservation">
+		SELECT B.BCODE,B.BSCODE,TO_CHAR(B.BDATE,'YYYY"년 "MM"월 "DD"일"') AS BDATE,B.BTIME,B.BMCOUNT,B.BMCODE,B.BMPHONE,B.BRKEY, S.SFILENAME1 AS BSFILENAME1, S.SADDR AS BSADDR, S.SNAME AS BSNAME 
+		FROM BOOK B, STORE S WHERE BSCODE=STORECODE AND BMCODE=#{bmCode} AND TO_CHAR(SYSDATE,'YYYY-MM-DD') > BDATE ORDER BY BDATE DESC
+	</select>
+	
+	<!-- 예약 취소하기 -->
+	<delete id="mybookDel" parameterType="String">
+		DELETE FROM BOOK WHERE BCODE=#{bCode}
+	</delete>
+	
+	<!-- 찜 하기 -->
+	<insert id="storesave" parameterType="hashmap">
+		INSERT INTO SAVE VALUES(#{storeCode},#{mCode}) 
+	</insert>
+
+	<!-- 찜 취소 -->
+	<delete id="storesavex" parameterType="hashmap">
+		DELETE FROM SAVE WHERE SSCODE=#{storeCode} AND SMCODE=#{mCode} 
+	</delete>
+
+	<!-- 찜목록 보기 -->
+	<select id="savelist" resultType="reviewsave">
+		SELECT * FROM SAVE sa , STORE st WHERE SSCODE=STORECODE AND SMCODE=#{smCode} 
+	</select>
+	
+	
+	<!-- 포인트 충전 -->
+	<update id="addPoint">
+		UPDATE MEMBER SET MPOINT=(MPOINT+#{mPoint}) WHERE MCODE=#{mCode} 
+	</update>
+	
+	<!-- 리뷰 작성 폼 이동 (예약코드를 가지고 예약DTO에서 예약관련 필드들 가져와야함)-->
+	<select id="ReviewForm" resultType="reservation" parameterType="String">
+		SELECT B.BCODE, B.BSCODE, TO_CHAR(B.BDATE,'YYYY"년 "MM"월 "DD"일"') AS BDATE, B.BTIME, B.BMCOUNT, B.BMCODE, B.BMPHONE, S.SFILENAME1 AS BSFILENAME1, S.SADDR AS BSADDR, S.SNAME AS BSNAME 
+		FROM BOOK B, STORE S WHERE BSCODE=STORECODE AND BCODE=#{bCode}
+	</select>
+	
+	<!-- 리뷰 작성 -->
+	<insert id="reviewWrite" parameterType="reviewsave">
+		INSERT INTO REVIEW VALUES('R_'||REVIEW_SEQ.NEXTVAL, #{rsCode},#{rContents},#{rStar},#{rBook},#{rmId},SYSDATE,#{rbCode})
+	</insert>
+	
+	<!-- 리뷰작성과 동시에 작성여부를 확인하는 키값을 1로 update 시켜주기 -->
+	<update id="reviewKey" parameterType="reviewsave">
+		UPDATE BOOK SET BRKEY=1 WHERE BCODE=#{rbCode}
+	</update>
+	
+	<!-- 내가 쓴 리뷰 목록 (마이 리뷰) -->
+	<select id="myRList" resultType="reviewsave" parameterType="String">
+		SELECT R.RCODE,R.RSCODE,R.RCONTENTS,R.RSTAR,TO_CHAR(R.RBOOK,'YYYY-MM-DD') AS RBOOK,R.RMID,R.RDATE,S.SNAME AS RSNAME
+		FROM REVIEW R, STORE S WHERE RMID=#{rmId} AND R.RSCODE = S.STORECODE ORDER BY RDATE DESC  
+	</select>
+	
+	<!-- 내가 쓴 리뷰 삭제하기 (마이 리뷰) -->
+	<delete id="myReviewDel" parameterType="String">
+		DELETE FROM REVIEW WHERE RCODE=#{rCode}
+	</delete>
+	
+	<!-- 나의 문의 현황 (회원) -->
+	<select id="M_myQnAList" resultType="qna" parameterType="String">
+		SELECT MQNACODE,MQNACAT,MQNAMID,MQNATITLE,MQNACONTENTS,TO_CHAR(MQNADATE,'YYYY-MM-DD') AS MQNADATE, 
+		MQNAANSWER, TO_CHAR(MQNADATE2,'YYYY-MM-DD') AS MQNADATE2,MQNAKEY FROM QNAM WHERE MQNAMID=#{mQnAmId} ORDER BY MQNADATE DESC
+	</select>
+	
+	
+	
+</mapper>
+
+
+
+

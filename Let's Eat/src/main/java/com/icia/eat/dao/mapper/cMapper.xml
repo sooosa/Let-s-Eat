@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Company">
+	
+	<!-- 회원가입 -->
+	<insert id="cInsert" parameterType="company">
+		INSERT INTO CMEMBER VALUES ('C_'||CMEMBER_SEQ.NEXTVAL,#{cId},#{cPw},#{cName},#{cPhone},#{cEmail},1,SYSDATE) 
+	</insert>
+
+	<!-- cidOverlap -->
+	<select id="cidOverlap" resultType="String" parameterType="String">
+		SELECT CID FROM CMEMBER WHERE CID=#{cId} 
+	</select>
+
+	<!-- 점주 로그인 (DTO타입으로 company 객체 모두 가져오기 위함)-->
+	<select id="clogin" resultType="company" parameterType="company">
+		SELECT * FROM CMEMBER WHERE CID=#{cId}
+	</select>
+	
+	<!-- 점주 로그인 (암호화된 비밀번호를 가져오기 위함) -->
+	<select id="EncPw" resultType="String" parameterType="String">
+		SELECT CPW FROM CMEMBER WHERE CID=#{cId}
+	</select>
+
+	<!-- 점주 정보보기 -->
+	<select id="cview" resultType="company" parameterType="String">
+		SELECT * FROM CMEMBER WHERE CID=#{cId} 
+	</select>
+
+	<!-- 점주 정보 수정 -->
+	<update id="cModify" parameterType="company" >
+		UPDATE CMEMBER SET CNAME=#{cName}, CPHONE=#{cPhone}, CEMAIL=#{cEmail} WHERE CID=#{cId} 
+	</update>
+
+	<!-- 점주 삭제 -->
+	<update id="cDel" parameterType="String">
+		UPDATE CMEMBER SET CKEY=2 WHERE CID=#{cId}
+	 </update>
+
+	<!-- 점주 아이디 찾기 -->
+	<select id="cidcheck" resultType="String">
+		SELECT CID FROM CMEMBER WHERE CNAME=#{cName} AND CPHONE=#{cPhone}
+	 </select>
+	
+	<!-- 이메일 인증 후 ckeyalter -->
+	<update id="cKAlter" parameterType="company">
+		UPDATE CMEMBER SET CKEY ='C' WHERE CID=#{cId} 
+	</update>
+	
+	<!-- 점주 비밀번호 변경하기 -->
+	<update id="cPwChange" parameterType="company">
+		UPDATE CMEMBER SET CPW=#{cPw} WHERE CID=#{cId} 
+	</update>
+
+
+	<!-- 업체관리 페이지(점주 - 업체 리스트)  -->
+	<select id="mgstore" resultType="store">
+		SELECT * FROM STORE WHERE SCCODE=#{scCode} ORDER BY SCONFIRMDATE DESC
+	</select>
+
+	<!-- 업체 등록하기 -->
+	<insert id="cupdate">
+		INSERT INTO STORE VALUES('S_'||STORE_SEQ.NEXTVAL,#{scCode},#{sFileName1,jdbcType=VARCHAR},#{sFileName2,jdbcType=VARCHAR},#{sFileName3,jdbcType=VARCHAR},
+		#{sTime},#{sUrl},#{sAddr},#{sName},#{sPhone},#{sSeat},#{sContents},#{sbNum},#{sPark},#{sKeyword},0,0,'',#{sFood})
+	</insert>
+	
+	
+	<!-- 나의 문의 현황 (점주) -->
+	<select id="C_myQnAList" resultType="qna" parameterType="String">
+		SELECT CQNACODE,CQNACAT,CQNACID,CQNATITLE,CQNACONTENTS, TO_CHAR(CQNADATE, 'YYYY-MM-DD') AS CQNADATE, 
+		CQNAANSWER, TO_CHAR(CQNADATE2, 'YYYY-MM-DD') AS CQNADATE2,CQNAKEY FROM QNAC WHERE CQNACID=#{cQnAcId} ORDER BY CQNADATE DESC
+	</select>
+	
+	
+</mapper>
+
+
+
+
